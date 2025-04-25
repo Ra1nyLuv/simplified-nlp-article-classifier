@@ -7,24 +7,23 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.preprocessing import LabelEncoder
-import os # 引入 os 模块
-import jieba # 确保 jieba 已导入
+import os
+import jieba
 
 def load_data(file_path, sample_size=100000):
     """
-    加载并解析数据集，限制数据量
-    格式: ID_!_分类ID_!_一级分类_!_标题_!_关键词
+    加载并解析数据集，并且限制数据量
+    文件内的数据格式为: ID_!_分类ID_!_一级分类_!_标题_!_关键词
     """
     data = []
-    # 检查文件是否存在
     if not os.path.exists(file_path):
         print(f"错误：数据文件 '{file_path}' 未找到。")
-        return None # 或者抛出异常
+        return None 
 
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             for i, line in enumerate(f):
-                if sample_size is not None and i >= sample_size:  # 允许不限制数据量
+                if sample_size is not None and i >= sample_size:
                     break
                 parts = line.strip().split('_!_')
                 if len(parts) >= 4:
@@ -32,7 +31,7 @@ def load_data(file_path, sample_size=100000):
                     primary_category = parts[2].replace('news_', '')  # 一级分类
                     keywords = parts[4] if len(parts) > 4 else ""  # 关键词
 
-                    # 将关键词也加入内容中增强特征
+                    # 将关键词加入内容中增强特征
                     full_content = content + " " + keywords
 
                     data.append({
@@ -62,11 +61,10 @@ def load_stopwords(filepath='stopwords.txt'):
             print(f"加载停用词时出错: {e}")
     else:
         print(f"警告：停用词文件 '{filepath}' 未找到，将不使用停用词。")
-    return list(stopwords) # TfidfVectorizer 需要 list 或 None
+    return list(stopwords)
 
 def chinese_tokenizer(text):
     """使用 jieba 分词"""
-    # 这里可以加入更复杂的文本清洗逻辑
     return list(jieba.cut(text))
 
 def train_and_evaluate(data_path='toutiao_news_data.txt', sample_size=10000, model_path='article_classifier.pkl', stopwords_path='stopwords.txt'):
@@ -77,7 +75,7 @@ def train_and_evaluate(data_path='toutiao_news_data.txt', sample_size=10000, mod
     df = load_data(data_path, sample_size=sample_size)
     if df is None or df.empty:
         print("数据加载失败或数据为空，无法继续训练。")
-        return None, None # 返回 None 表示失败
+        return None, None 
 
     # 对类别标签进行编码
     le = LabelEncoder()
@@ -102,15 +100,13 @@ def train_and_evaluate(data_path='toutiao_news_data.txt', sample_size=10000, mod
     # 定义模型管道
     # 注意：这里的参数是基础参数，可以通过 model_optimization.py 找到更优参数
     model = Pipeline([
-        # 使用中文分词器和停用词，尝试 n-gram(1,2)
         ('tfidf', TfidfVectorizer(
             tokenizer=chinese_tokenizer, # 使用 jieba 分词
-            stop_words=stopwords if stopwords else None, # 应用中文停用词
-            ngram_range=(1, 2), # 尝试包含二元词组
+            stop_words=stopwords if stopwords else None, # 应用停用词
+            ngram_range=(1, 2),
             min_df=5,
             max_df=0.8,
             max_features=10000)),
-        # 添加 class_weight='balanced' 来处理类别不平衡
         ('clf', LinearSVC(C=1.0, dual=False, class_weight='balanced'))
     ])
 
@@ -137,11 +133,10 @@ def train_and_evaluate(data_path='toutiao_news_data.txt', sample_size=10000, mod
         # 即使评估出错，模型也已训练好，可以选择继续保存
 
     # 保存模型和标签编码器
-    # 注意：我们将整个 pipeline (model) 和 label encoder (le) 保存
+    # 将整个 pipeline (model) 和 label encoder (le) 保存
     model_data = {
         'model': model,           # 保存整个 Pipeline 对象
         'label_encoder': le       # 保存标签编码器
-        # 'vectorizer' 不再单独保存，它包含在 model 中
     }
     try:
         with open(model_path, 'wb') as f:
@@ -149,11 +144,10 @@ def train_and_evaluate(data_path='toutiao_news_data.txt', sample_size=10000, mod
         print(f"模型和标签编码器已保存到 {model_path}")
     except Exception as e:
         print(f"保存模型时出错: {e}")
-        return None, None # 保存失败也视为失败
+        return None, None
 
     return model, le # 返回训练好的模型和编码器
 
-# 修改后的示例预测函数，接收加载好的模型和编码器
 def classify_article_loaded(text, loaded_model, loaded_label_encoder):
     """
     使用已加载的模型和标签编码器对输入的文章内容进行分类。
@@ -186,7 +180,6 @@ def classify_article_loaded(text, loaded_model, loaded_label_encoder):
 # 主程序入口
 if __name__ == "__main__":
     # 训练、评估并保存模型
-    # 如果硬件允许，可以尝试增大 sample_size
     # 需要提供一个 stopwords.txt 文件，或者将 stopwords_path 设为 None
     trained_model, label_encoder = train_and_evaluate(sample_size=10000, stopwords_path='stopwords.txt')
 
@@ -205,21 +198,3 @@ if __name__ == "__main__":
         print(f"预测分类: {predicted_category_2}")
     else:
         print("\n模型训练或保存失败，无法进行测试分类。")
-
-    # 如果需要从文件加载模型进行预测（例如在另一个脚本或应用中）
-    # model_path = 'article_classifier.pkl'
-    # if os.path.exists(model_path):
-    #     try:
-    #         with open(model_path, 'rb') as f:
-    #             loaded_data = pickle.load(f)
-    #         loaded_model = loaded_data['model']
-    #         loaded_le = loaded_data['label_encoder']
-    #         print(f"\n从 {model_path} 加载模型成功。")
-    #         # 使用加载的模型进行预测
-    #         test_text_3 = "最新的电影票房排行榜出炉"
-    #         category_3 = classify_article_loaded(test_text_3, loaded_model, loaded_le)
-    #         print(f"加载模型预测: '{test_text_3}' -> {category_3}")
-    #     except Exception as e:
-    #         print(f"从文件加载或使用模型时出错: {e}")
-    # else:
-    #     print(f"\n模型文件 {model_path} 不存在，无法从文件加载测试。")
