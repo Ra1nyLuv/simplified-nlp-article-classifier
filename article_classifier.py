@@ -127,7 +127,7 @@ def train_and_evaluate(data_path='toutiao_news_data.txt', sample_size=10000, mod
     except Exception as e:
         print(f"模型评估时出错: {e}")
 
-    # 
+
     model_data = {
         'model': model,
         'label_encoder': le
