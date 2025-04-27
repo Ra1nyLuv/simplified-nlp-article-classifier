@@ -33,6 +33,12 @@
 | 可视化           | Matplotlib, Seaborn                 |
 
 ## 快速开始
+运行项目：
+article_classifier.py
+优化模型(可选):
+model_optimization.py
+前端可视化页面:
+终端运行:`stream run app.py`
 
 ### 环境准备
 

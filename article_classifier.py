@@ -98,7 +98,6 @@ def train_and_evaluate(data_path='toutiao_news_data.txt', sample_size=10000, mod
     stopwords = load_stopwords(stopwords_path)
 
     # 定义模型管道
-    # 注意：这里的参数是基础参数，可以通过 model_optimization.py 找到更优参数
     model = Pipeline([
         ('tfidf', TfidfVectorizer(
             tokenizer=chinese_tokenizer, # 使用 jieba 分词
@@ -110,7 +109,6 @@ def train_and_evaluate(data_path='toutiao_news_data.txt', sample_size=10000, mod
         ('clf', LinearSVC(C=1.0, dual=False, class_weight='balanced'))
     ])
 
-    # 训练模型
     print("开始训练 SVM 模型...")
     try:
         model.fit(X_train, y_train)
@@ -119,24 +117,20 @@ def train_and_evaluate(data_path='toutiao_news_data.txt', sample_size=10000, mod
         print(f"模型训练时出错: {e}")
         return None, None
 
-    # 评估模型
+    # 
     print("\n开始评估模型...")
     try:
         y_pred = model.predict(X_test)
         print("\n分类报告:")
-        # 确保标签编码器中的类别与测试集标签对齐
-        # 使用 le.classes_ 获取所有训练过的类别名称
         target_names = le.classes_
         print(classification_report(y_test, y_pred, target_names=target_names, zero_division=0))
     except Exception as e:
         print(f"模型评估时出错: {e}")
-        # 即使评估出错，模型也已训练好，可以选择继续保存
 
-    # 保存模型和标签编码器
-    # 将整个 pipeline (model) 和 label encoder (le) 保存
+    # 
     model_data = {
-        'model': model,           # 保存整个 Pipeline 对象
-        'label_encoder': le       # 保存标签编码器
+        'model': model,
+        'label_encoder': le
     }
     try:
         with open(model_path, 'wb') as f:
@@ -146,7 +140,7 @@ def train_and_evaluate(data_path='toutiao_news_data.txt', sample_size=10000, mod
         print(f"保存模型时出错: {e}")
         return None, None
 
-    return model, le # 返回训练好的模型和编码器
+    return model, le
 
 def classify_article_loaded(text, loaded_model, loaded_label_encoder):
     """
@@ -161,14 +155,11 @@ def classify_article_loaded(text, loaded_model, loaded_label_encoder):
         return "错误：输入文本无效"
 
     try:
-        # 模型（Pipeline）会自动处理向量化和预测
         prediction = loaded_model.predict([text])[0]
-        # 解码类别
         category = loaded_label_encoder.inverse_transform([prediction])[0]
         return category
     except Exception as e:
         print(f"分类时出错: {e}")
-        # 可以根据需要返回更具体的错误信息
         if "not fitted" in str(e).lower():
              return "错误：模型或其组件未正确加载或训练。"
         elif "dimension mismatch" in str(e).lower():
@@ -177,16 +168,13 @@ def classify_article_loaded(text, loaded_model, loaded_label_encoder):
              return f"错误：分类过程中发生未知错误 ({type(e).__name__})"
 
 
-# 主程序入口
 if __name__ == "__main__":
     # 训练、评估并保存模型
-    # 需要提供一个 stopwords.txt 文件，或者将 stopwords_path 设为 None
     trained_model, label_encoder = train_and_evaluate(sample_size=10000, stopwords_path='stopwords.txt')
 
     # 检查模型是否成功训练
     if trained_model and label_encoder:
         print("\n开始测试分类函数...")
-        # 测试分类函数（使用加载返回的模型）
         test_text = '量子计算机取得重大突破，未来计算能力将指数级增长'
         predicted_category = classify_article_loaded(test_text, trained_model, label_encoder)
         print(f"测试文章: '{test_text}'")
