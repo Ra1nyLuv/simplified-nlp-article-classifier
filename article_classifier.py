@@ -67,7 +67,7 @@ def chinese_tokenizer(text):
     """使用 jieba 分词"""
     return list(jieba.cut(text))
 
-def train_and_evaluate(data_path='toutiao_news_data.txt', sample_size=10000, model_path='article_classifier.pkl', stopwords_path='stopwords.txt'):
+def train_and_evaluate(data_path='toutiao_news_data.txt', sample_size=20000, model_path='article_classifier.pkl', stopwords_path='stopwords.txt'):
     """
     加载数据、训练模型、评估并保存模型。
     """

@@ -32,18 +32,15 @@ def load_stopwords(filepath='stopwords.txt'):
 
 def chinese_tokenizer(text):
     """使用 jieba 分词"""
-    # 这里可以加入更复杂的文本清洗逻辑
     return list(jieba.cut(text))
-# --- 结束引入辅助函数 ---
 
 
-def load_data(file_path, sample_size=None): # <--- 添加 sample_size 参数
+def load_data(file_path, sample_size=None): 
     """
     加载并解析数据集，允许采样
     格式: ID_!_分类ID_!_一级分类_!_标题_!_关键词
     """
     data = []
-    # 检查文件是否存在
     if not os.path.exists(file_path):
         print(f"错误：数据文件 '{file_path}' 未找到。")
         return None
@@ -51,15 +48,15 @@ def load_data(file_path, sample_size=None): # <--- 添加 sample_size 参数
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             for i, line in enumerate(f):
-                if sample_size is not None and i >= sample_size: # 应用采样限制
+                if sample_size is not None and i >= sample_size:
                     break
                 parts = line.strip().split('_!_')
                 if len(parts) >= 4:
-                    content = parts[3]  # 标题作为主要内容
+                    content = parts[3]  # 将标题作为主要内容
                     primary_category = parts[2].replace('news_', '')  # 一级分类
                     keywords = parts[4] if len(parts) > 4 else ""  # 关键词
 
-                    # 将关键词也加入内容中增强特征
+                    # 将关键词加入内容以增强特征
                     full_content = content + " " + keywords
 
                     data.append({
@@ -76,12 +73,12 @@ def load_data(file_path, sample_size=None): # <--- 添加 sample_size 参数
 
     return pd.DataFrame(data)
 
-def optimize_models(data_path='toutiao_news_data.txt', stopwords_path='stopwords.txt', sample_size=None, save_best=True, cv_folds=3): # <--- 添加参数
+def optimize_models(data_path='toutiao_news_data.txt', stopwords_path='stopwords.txt', sample_size=None, save_best=True, cv_folds=3):
     """
     优化模型超参数并比较不同模型的性能
     """
     print("开始加载数据...")
-    # 加载数据
+
     df = load_data(data_path, sample_size=sample_size) # 应用采样
     if df is None or df.empty:
         print("数据加载失败或数据为空，优化中止。")
@@ -124,10 +121,9 @@ def optimize_models(data_path='toutiao_news_data.txt', stopwords_path='stopwords
     # 定义不同的分类器 (添加 class_weight='balanced')
     classifiers = {
         'naive_bayes': MultinomialNB(),
-        'svm': LinearSVC(class_weight='balanced', dual=False, max_iter=2000), # dual=False 适用于 n_samples > n_features
-        'random_forest': RandomForestClassifier(n_estimators=100, class_weight='balanced', n_jobs=-1), # 使用多核
+        'svm': LinearSVC(class_weight='balanced', dual=False, max_iter=2000),
+        'random_forest': RandomForestClassifier(n_estimators=100, class_weight='balanced', n_jobs=-1),
         'logistic_regression': LogisticRegression(max_iter=2000, class_weight='balanced', solver='liblinear', n_jobs=-1), # liblinear 适合二分类和 OvR 多分类
-        # GradientBoosting 不直接支持 class_weight，但可以通过 sample_weight 间接实现，这里保持原样
         # 'gradient_boosting': GradientBoostingClassifier(n_estimators=100)
     }
 
@@ -200,9 +196,7 @@ def optimize_models(data_path='toutiao_news_data.txt', stopwords_path='stopwords
     print(f"\n--- 对最佳组合 {best_extractor_name} + {best_clf_name} (CV Acc: {best_cv_score:.4f}) 进行超参数优化 ---")
 
     # 根据最佳模型类型设置不同的参数网格
-    # 注意：参数名称需要与 Pipeline 中的步骤名称匹配 ('vectorizer__', 'classifier__')
     param_grid = {}
-    # 可以为 vectorizer 也设置参数网格
     param_grid.update({
         'vectorizer__min_df': [3, 5, 7],
         'vectorizer__max_df': [0.7, 0.8, 0.9],
@@ -303,6 +297,5 @@ def optimize_models(data_path='toutiao_news_data.txt', stopwords_path='stopwords
 
 if __name__ == "__main__":
     # 可以通过 sample_size 控制用于优化的数据量，None 表示使用全部数据
-    # 增加 cv_folds 会更可靠但更慢
-    optimize_models(sample_size=50000, cv_folds=3) # 例如，使用 50000 条数据进行 3 折交叉验证
+    optimize_models(sample_size=50000, cv_folds=3)
     print("\n模型优化完成")

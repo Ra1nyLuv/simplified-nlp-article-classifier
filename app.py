@@ -40,7 +40,6 @@ def load_model(model_path='article_classifier.pkl'):
 # 分类函数 
 def classify_article(text, model, label_encoder):
     if not text.strip():
-        # 返回类别和 None 置信度
         return "请输入文章内容", None
 
     # 使用加载的 Pipeline 模型直接预测 (它内部包含向量化)
@@ -152,9 +151,9 @@ def main():
         st.markdown("""
         1.  **输入文本**: 在文本框中输入或粘贴文章内容。
         2.  **开始分类**:
-            *   输入文本后，可以按下**Ctrl+Enter** 键后,按 **Enter** 键提交。
+            *   输入文本后，可以按下**Ctrl+Enter**提交。
             *   或者，点击 **开始分类** 按钮。
-        3.  系统将显示预测的类别和置信度（如果可用）。
+        3.  系统将显示预测的类别。
         """)
 
 
