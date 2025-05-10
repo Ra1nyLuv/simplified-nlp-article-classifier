@@ -115,7 +115,7 @@ def main():
         # The value argument sets the initial display value.
         st.text_area("请输入或粘贴文章内容:", value=st.session_state.text_for_classification, height=200, key="text_for_classification")
         # 表单提交按钮
-        submitted = st.form_submit_button("开始分类 (或在上方文本框按 Enter)")
+        submitted = st.form_submit_button("点击开始分类 (或按下Ctrl + Enter)")
 
         if submitted:
             # 直接从 session_state 获取文本内容，该状态已由 text_area 通过 key 更新。
