@@ -101,22 +101,26 @@ def main():
 
 
     # 初始化 session_state 以存储文本内容和分类结果
-    if 'text_input' not in st.session_state:
-        st.session_state.text_input = ""
+    if 'text_for_classification' not in st.session_state:
+        st.session_state.text_for_classification = ""
     if 'classification_result' not in st.session_state:
         st.session_state.classification_result = None
 
 
     # 使用表单实现回车提交
     with st.form(key='classification_form'):
-        # 文本输入区域，使用 session_state 的值
-        text_input_area = st.text_area("请输入或粘贴文章内容:", value=st.session_state.text_input, height=200, key="text_area_input")
+        # 文本输入区域，其状态由 st.session_state.text_for_classification 管理
+        # The key "text_for_classification" ensures st.session_state.text_for_classification is updated
+        # with the text_area's content upon interaction.
+        # The value argument sets the initial display value.
+        st.text_area("请输入或粘贴文章内容:", value=st.session_state.text_for_classification, height=200, key="text_for_classification")
         # 表单提交按钮
         submitted = st.form_submit_button("开始分类 (或在上方文本框按 Enter)")
 
         if submitted:
-            st.session_state.text_input = text_input_area
-            content_to_classify = st.session_state.text_input
+            # 直接从 session_state 获取文本内容，该状态已由 text_area 通过 key 更新。
+            content_to_classify = st.session_state.text_for_classification
+            # 此处不再需要 st.session_state.text_for_classification = content_to_classify，因为它是多余的。
 
             if content_to_classify.strip():
                 with st.spinner("正在进行分类..."):

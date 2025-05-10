@@ -49,19 +49,27 @@ def load_data(file_path, sample_size=100000):
     return pd.DataFrame(data)
 
 def load_stopwords(filepath='stopwords.txt'):
-    """加载停用词列表"""
+    """加载停用词列表并进行分词处理，确保与tokenizer一致"""
     stopwords = set()
     if os.path.exists(filepath):
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 for line in f:
-                    stopwords.add(line.strip())
-            print(f"成功加载 {len(stopwords)} 个停用词。")
+                    # 对每个停用词进行分词，确保与chinese_tokenizer一致
+                    word = line.strip()
+                    if word:
+                        # 将原始停用词添加到集合
+                        stopwords.add(word)
+                        # 对停用词进行分词，将分词结果也添加到停用词集合
+                        for token in jieba.cut(word):
+                            if token.strip():
+                                stopwords.add(token.strip())
+            print(f"成功加载并处理 {len(stopwords)} 个停用词。")
         except Exception as e:
             print(f"加载停用词时出错: {e}")
     else:
         print(f"警告：停用词文件 '{filepath}' 未找到，将不使用停用词。")
-    return list(stopwords)
+    return list(stopwords) if stopwords else None
 
 def chinese_tokenizer(text):
     """使用 jieba 分词"""
@@ -105,6 +113,7 @@ def train_and_evaluate(data_path='toutiao_news_data.txt', sample_size=20000, mod
             ngram_range=(1, 2),
             min_df=5,
             max_df=0.8,
+            token_pattern=None, # 设置为None以避免警告，因为使用了自定义tokenizer
             max_features=10000)),
         ('clf', LinearSVC(C=1.0, dual=False, class_weight='balanced'))
     ])

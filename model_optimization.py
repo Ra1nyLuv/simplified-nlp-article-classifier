@@ -16,14 +16,43 @@ from sklearn.preprocessing import LabelEncoder
 
 # --- 从 article_classifier.py 引入辅助函数 ---
 def load_stopwords(filepath='stopwords.txt'):
-    """加载停用词列表"""
+    """加载停用词列表并进行分词处理，确保与tokenizer一致"""
     stopwords = set()
     if os.path.exists(filepath):
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 for line in f:
-                    stopwords.add(line.strip())
-            print(f"成功加载 {len(stopwords)} 个停用词。")
+                    # 对每个停用词进行处理
+                    word = line.strip()
+                    if word:
+                        # 将原始停用词添加到集合
+                        stopwords.add(word)
+                        
+                        # 对停用词进行分词，将分词结果也添加到停用词集合
+                        for token in jieba.cut(word):
+                            if token.strip():
+                                stopwords.add(token.strip())
+                        
+                        # 处理特殊字符和标点符号
+                        for char in word:
+                            if char.strip():
+                                stopwords.add(char.strip())
+                        
+                        # 处理可能的Unicode字符
+                        for char in word:
+                            if r'\u' in repr(char):
+                                stopwords.add(char)
+            
+            # 添加常见的特殊字符和标点符号，这些在警告中可能出现
+            special_chars = ['lex', 'δ', 'ψ', 'в', 'ⅲ', 'ｌ', 'ｒ', 'ｔ', 'ｘ', 'ｚ']
+            for char in special_chars:
+                stopwords.add(char)
+                
+            # 添加所有单个字母，解决警告中提到的'l'不在停用词中的问题
+            for letter in 'abcdefghijklmnopqrstuvwxyz':
+                stopwords.add(letter)
+                
+            print(f"成功加载并处理 {len(stopwords)} 个停用词。")
         except Exception as e:
             print(f"加载停用词时出错: {e}")
     else:
@@ -111,10 +140,11 @@ def optimize_models(data_path='toutiao_news_data.txt', stopwords_path='stopwords
             ngram_range=(1, 2), # 保持 ngram
             min_df=5, # 使用 article_classifier.py 中调整后的值
             max_df=0.8, # 使用 article_classifier.py 中调整后的值
-            max_features=10000 # 使用 article_classifier.py 中调整后的值
+            max_features=10000, # 使用 article_classifier.py 中调整后的值
+            token_pattern=None # 设置为None以避免警告，因为使用了自定义tokenizer
         ),
         # 可以保留或添加其他 vectorizer 变体，确保它们也使用 tokenizer 和 stop_words
-        # 'tfidf_basic': TfidfVectorizer(tokenizer=chinese_tokenizer, stop_words=stopwords, min_df=5, max_df=0.8, max_features=10000),
+        # 'tfidf_basic': TfidfVectorizer(tokenizer=chinese_tokenizer, stop_words=stopwords, min_df=5, max_df=0.8, max_features=10000, token_pattern=None),
         # 'count_vector': CountVectorizer(tokenizer=chinese_tokenizer, stop_words=stopwords, min_df=5, max_df=0.8, max_features=10000)
     }
 
